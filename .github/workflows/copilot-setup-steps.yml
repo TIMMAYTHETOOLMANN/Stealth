@@ -31,7 +31,11 @@ jobs:
       - name: Install Chrome
         run: |
           sudo apt-get update
-          sudo apt-get install -y google-chrome-stable || sudo apt-get install -y chromium-browser
+          echo "Trying to install google-chrome-stable..."
+          if ! sudo apt-get install -y google-chrome-stable; then
+            echo "google-chrome-stable install failed, trying chromium-browser..."
+            sudo apt-get install -y chromium-browser
+          fi
 
       - name: Warm MCP server and HTTP bridge caches
         run: |
@@ -51,6 +55,7 @@ jobs:
             exit "$WARMUP_EXIT"
           fi
 
+          # sessionTimeout is in milliseconds (3600000 = 1 hour).
           supergateway \
             --stdio "uvx mcp-stealth-chrome@latest" \
             --outputTransport streamableHttp \
