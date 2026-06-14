@@ -5,11 +5,11 @@ This repository is configured to run **mcp-stealth-chrome** in a cloud-friendly 
 ## Included configuration
 
 - **Copilot cloud agent bootstrap:**
-  - `/home/runner/work/Stealth/Stealth/TIMMAYTHETOOLMANN/Stealth/.github/workflows/copilot-setup-steps.yml`
+  - `.github/workflows/copilot-setup-steps.yml`
   - Installs Node.js, `uv`, Chrome/Chromium, and warms both `mcp-stealth-chrome` and `supergateway`
 - **Project MCP client bridge config:**
-  - `/home/runner/work/Stealth/Stealth/TIMMAYTHETOOLMANN/Stealth/.mcp.json` (Claude/project-level)
-  - `/home/runner/work/Stealth/Stealth/TIMMAYTHETOOLMANN/Stealth/.vscode/mcp.json` (VS Code/project-level)
+  - `.mcp.json` (Claude/project-level)
+  - `.vscode/mcp.json` (VS Code/project-level)
   - Connects MCP clients to the HTTP endpoint via `supergateway --streamableHttp`
 
 ## Start always-on HTTP MCP server (preferred)
