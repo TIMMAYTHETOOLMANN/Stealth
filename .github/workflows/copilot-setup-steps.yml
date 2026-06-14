@@ -45,14 +45,10 @@ jobs:
           HEALTH_RETRIES=10
 
           # Warmup installs/validates package resolution before agent execution.
-          set +e
-          uvx --from mcp-stealth-chrome@latest python -c "import mcp_stealth_chrome as m; print(getattr(m, '__version__', 'ok'))" > /tmp/mcp-warmup.log 2>&1
-          WARMUP_EXIT=$?
-          set -e
-          if [ "$WARMUP_EXIT" -ne 0 ]; then
-            echo "mcp-stealth-chrome warmup failed with exit code $WARMUP_EXIT"
+          if ! uvx --from mcp-stealth-chrome@latest python -c "import mcp_stealth_chrome as m; print(getattr(m, '__version__', 'ok'))" > /tmp/mcp-warmup.log 2>&1; then
+            echo "mcp-stealth-chrome warmup failed"
             cat /tmp/mcp-warmup.log || true
-            exit "$WARMUP_EXIT"
+            exit 1
           fi
 
           # sessionTimeout is in milliseconds (3600000 = 1 hour).
@@ -66,7 +62,7 @@ jobs:
             --healthEndpoint /healthz \
             > /tmp/supergateway.log 2>&1 &
           SG_PID=$!
-          trap 'kill "$SG_PID" >/dev/null 2>&1 || true' EXIT
+          trap 'kill "$SG_PID" >/dev/null 2>&1 || true' EXIT INT TERM
 
           READY=0
           for i in $(seq 1 "${HEALTH_RETRIES}"); do
