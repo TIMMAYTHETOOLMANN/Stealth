@@ -38,15 +38,14 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           npm install -g supergateway
 
-          WARMUP_TIMEOUT=30
           HEALTH_RETRIES=10
 
-          # Warmup avoids long first-run dependency install delays in sessions.
+          # Warmup installs/validates package resolution before agent execution.
           set +e
-          timeout "${WARMUP_TIMEOUT}s" uvx mcp-stealth-chrome@latest </dev/null > /tmp/mcp-warmup.log 2>&1
+          uvx --from mcp-stealth-chrome@latest python -c "import mcp_stealth_chrome as m; print(getattr(m, '__version__', 'ok'))" > /tmp/mcp-warmup.log 2>&1
           WARMUP_EXIT=$?
           set -e
-          if [ "$WARMUP_EXIT" -ne 0 ] && [ "$WARMUP_EXIT" -ne 124 ]; then
+          if [ "$WARMUP_EXIT" -ne 0 ]; then
             echo "mcp-stealth-chrome warmup failed with exit code $WARMUP_EXIT"
             cat /tmp/mcp-warmup.log || true
             exit "$WARMUP_EXIT"
@@ -61,6 +60,8 @@ jobs:
             --streamableHttpPath /mcp \
             --healthEndpoint /healthz \
             > /tmp/supergateway.log 2>&1 &
+          SG_PID=$!
+          trap 'kill "$SG_PID" >/dev/null 2>&1 || true' EXIT
 
           READY=0
           for i in $(seq 1 "${HEALTH_RETRIES}"); do
