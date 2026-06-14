@@ -45,7 +45,13 @@ jobs:
           STARTUP_TIMEOUT=20
           HEALTH_RETRIES=10
 
-          timeout "${STARTUP_TIMEOUT}s" supergateway --stdio "uvx mcp-stealth-chrome@latest" --outputTransport streamableHttp --port 8000 --streamableHttpPath /mcp --healthEndpoint /healthz > /tmp/supergateway.log 2>&1 &
+          timeout "${STARTUP_TIMEOUT}s" supergateway \
+            --stdio "uvx mcp-stealth-chrome@latest" \
+            --outputTransport streamableHttp \
+            --port 8000 \
+            --streamableHttpPath /mcp \
+            --healthEndpoint /healthz \
+            > /tmp/supergateway.log 2>&1 &
 
           READY=0
           for i in $(seq 1 "${HEALTH_RETRIES}"); do
