@@ -55,6 +55,8 @@ jobs:
           supergateway \
             --stdio "uvx mcp-stealth-chrome@latest" \
             --outputTransport streamableHttp \
+            --stateful \
+            --sessionTimeout 3600000 \
             --port 8000 \
             --streamableHttpPath /mcp \
             --healthEndpoint /healthz \
