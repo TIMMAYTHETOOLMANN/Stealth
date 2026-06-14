@@ -37,10 +37,27 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           npm install -g supergateway
+
+          # 30s warmup avoids long first-run dependency install delays in sessions.
           timeout 30s uvx mcp-stealth-chrome@latest </dev/null || true
-          timeout 20s supergateway --stdio "uvx mcp-stealth-chrome@latest" --outputTransport streamableHttp --port 8000 --streamableHttpPath /mcp --healthEndpoint /healthz &
-          for i in {1..10}; do
-            curl -fsS http://127.0.0.1:8000/healthz && break
+
+          # 20s is enough for a startup probe while keeping setup latency low.
+          STARTUP_TIMEOUT=20
+          HEALTH_RETRIES=10
+
+          timeout "${STARTUP_TIMEOUT}s" supergateway --stdio "uvx mcp-stealth-chrome@latest" --outputTransport streamableHttp --port 8000 --streamableHttpPath /mcp --healthEndpoint /healthz > /tmp/supergateway.log 2>&1 &
+
+          READY=0
+          for i in $(seq 1 "${HEALTH_RETRIES}"); do
+            if curl -fsS http://127.0.0.1:8000/healthz; then
+              READY=1
+              break
+            fi
             sleep 1
           done
-          curl -fsS http://127.0.0.1:8000/healthz
+
+          if [ "$READY" -ne 1 ]; then
+            echo "supergateway health check failed after ${HEALTH_RETRIES}s"
+            cat /tmp/supergateway.log || true
+            exit 1
+          fi
