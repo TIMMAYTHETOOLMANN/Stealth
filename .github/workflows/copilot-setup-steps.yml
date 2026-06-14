@@ -1,0 +1,43 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 59
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable || sudo apt-get install -y chromium-browser
+
+      - name: Warm MCP server and HTTP bridge caches
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          npm install -g supergateway
+          timeout 30s uvx mcp-stealth-chrome@latest </dev/null || true
+          timeout 15s supergateway --stdio "uvx mcp-stealth-chrome@latest" --outputTransport streamableHttp --port 8000 --streamableHttpPath /mcp --healthEndpoint /healthz &
+          sleep 5
+          curl -fsS http://127.0.0.1:8000/healthz
