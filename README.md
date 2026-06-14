@@ -29,6 +29,7 @@ npx -y supergateway \
 
 - MCP endpoint: `http://127.0.0.1:8000/mcp`
 - Health endpoint: `http://127.0.0.1:8000/healthz`
+- `sessionTimeout` is in **milliseconds** (`3600000` = 1 hour).
 
 ## Verify
 

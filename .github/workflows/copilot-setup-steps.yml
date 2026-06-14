@@ -38,14 +38,13 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           npm install -g supergateway
 
-          # 30s warmup avoids long first-run dependency install delays in sessions.
-          timeout 30s uvx mcp-stealth-chrome@latest </dev/null || true
-
-          # 20s is enough for a startup probe while keeping setup latency low.
-          STARTUP_TIMEOUT=20
+          WARMUP_TIMEOUT=30
           HEALTH_RETRIES=10
 
-          timeout "${STARTUP_TIMEOUT}s" supergateway \
+          # Warmup avoids long first-run dependency install delays in sessions.
+          timeout "${WARMUP_TIMEOUT}s" uvx mcp-stealth-chrome@latest </dev/null || true
+
+          supergateway \
             --stdio "uvx mcp-stealth-chrome@latest" \
             --outputTransport streamableHttp \
             --port 8000 \
