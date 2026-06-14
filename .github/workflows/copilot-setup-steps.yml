@@ -42,7 +42,15 @@ jobs:
           HEALTH_RETRIES=10
 
           # Warmup avoids long first-run dependency install delays in sessions.
-          timeout "${WARMUP_TIMEOUT}s" uvx mcp-stealth-chrome@latest </dev/null || true
+          set +e
+          timeout "${WARMUP_TIMEOUT}s" uvx mcp-stealth-chrome@latest </dev/null > /tmp/mcp-warmup.log 2>&1
+          WARMUP_EXIT=$?
+          set -e
+          if [ "$WARMUP_EXIT" -ne 0 ] && [ "$WARMUP_EXIT" -ne 124 ]; then
+            echo "mcp-stealth-chrome warmup failed with exit code $WARMUP_EXIT"
+            cat /tmp/mcp-warmup.log || true
+            exit "$WARMUP_EXIT"
+          fi
 
           supergateway \
             --stdio "uvx mcp-stealth-chrome@latest" \
@@ -62,7 +70,7 @@ jobs:
           done
 
           if [ "$READY" -ne 1 ]; then
-            echo "supergateway health check failed after ${HEALTH_RETRIES}s"
+            echo "supergateway health check failed after ${HEALTH_RETRIES} attempts"
             cat /tmp/supergateway.log || true
             exit 1
           fi
