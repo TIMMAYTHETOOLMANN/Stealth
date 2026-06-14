@@ -1,0 +1,80 @@
+name: "Copilot Setup Steps"
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+  pull_request:
+    paths:
+      - .github/workflows/copilot-setup-steps.yml
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install uv
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Install Chrome
+        run: |
+          sudo apt-get update
+          echo "Trying to install google-chrome-stable..."
+          if ! sudo apt-get install -y google-chrome-stable; then
+            echo "google-chrome-stable install failed, trying chromium-browser..."
+            sudo apt-get install -y chromium-browser
+          fi
+
+      - name: Warm MCP server and HTTP bridge caches
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          npm install -g supergateway
+
+          HEALTH_RETRIES=10
+
+          # Warmup installs/validates package resolution before agent execution.
+          if ! uvx --from mcp-stealth-chrome@latest python -c "import mcp_stealth_chrome as m; print(getattr(m, '__version__', 'ok'))" > /tmp/mcp-warmup.log 2>&1; then
+            echo "mcp-stealth-chrome warmup failed"
+            cat /tmp/mcp-warmup.log || true
+            exit 1
+          fi
+
+          # sessionTimeout is in milliseconds (3600000 = 1 hour).
+          supergateway \
+            --stdio "uvx mcp-stealth-chrome@latest" \
+            --outputTransport streamableHttp \
+            --stateful \
+            --sessionTimeout 3600000 \
+            --port 8000 \
+            --streamableHttpPath /mcp \
+            --healthEndpoint /healthz \
+            > /tmp/supergateway.log 2>&1 &
+          SG_PID=$!
+          trap 'kill "$SG_PID" >/dev/null 2>&1 || true' EXIT INT TERM
+
+          READY=0
+          for i in $(seq 1 "${HEALTH_RETRIES}"); do
+            if curl -fsS http://127.0.0.1:8000/healthz; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$READY" -ne 1 ]; then
+            echo "supergateway health check failed after ${HEALTH_RETRIES} attempts"
+            cat /tmp/supergateway.log || true
+            exit 1
+          fi
