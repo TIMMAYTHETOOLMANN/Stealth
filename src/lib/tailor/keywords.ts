@@ -129,8 +129,8 @@ export function relevanceOf(fragment: string, terms: WeightedTerm[]): number {
   for (const { term, weight } of terms) {
     if (term.includes(" ")) {
       if (lower.includes(term)) score += weight * 1.5;
-    } else if (lower.includes(` ${term} `) || lower.includes(`${term}`)) {
-      // word-boundary-ish match
+    } else {
+      // Single-token: require a word-boundary match to avoid partial hits.
       const re = new RegExp(`\\b${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`);
       if (re.test(lower)) score += weight;
     }

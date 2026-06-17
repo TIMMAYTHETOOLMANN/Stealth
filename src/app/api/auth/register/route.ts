@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { authenticate, publicUser, registerUser, startSession } from "@/lib/auth";
+import { publicUser, registerUser, startSession } from "@/lib/auth";
 import { fail, ok, parseJson } from "@/lib/api";
 
 const schema = z.object({
