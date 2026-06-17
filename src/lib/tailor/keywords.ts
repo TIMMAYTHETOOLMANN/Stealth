@@ -14,7 +14,7 @@ const STOPWORDS = new Set([
   "with","that","this","have","from","they","will","would","there","their","what",
   "about","which","when","make","like","time","just","know","take","into","your",
   "some","could","them","than","then","look","only","come","over","also","back",
-  "after","work","first","well","year","work","such","because","through","being",
+  "after","work","first","well","year","such","because","through","being",
   "while","should","these","those","other","every","under","within","across",
   "able","more","most","much","very","each","both","here","were","been","does",
   "doing","done","etc","per","via","upon","onto","off","yet","may","might","must",

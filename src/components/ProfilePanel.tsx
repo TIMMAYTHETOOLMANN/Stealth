@@ -99,7 +99,11 @@ export default function ProfilePanel({
 
   return (
     <div>
-      {message && <div className={`alert ${message.kind === "success" ? "success" : message.kind === "info" ? "info" : ""}`}>{message.text}</div>}
+      {message && (
+        <div className={`alert ${message.kind === "alert" ? "" : message.kind}`}>
+          {message.text}
+        </div>
+      )}
 
       <div className="panel">
         <div className="panel-title">
