@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client";
+import { parseResumeToProfile } from "@/lib/profile/import";
 import type { EducationItem, ExperienceItem, Profile } from "@/lib/types";
 
 function newExperience(): ExperienceItem {
@@ -33,6 +34,7 @@ export default function ProfilePanel({
 }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [skillInput, setSkillInput] = useState("");
+  const [coreDoc, setCoreDoc] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ kind: string; text: string } | null>(
     null,
@@ -61,6 +63,33 @@ export default function ProfilePanel({
     }
     update({ skills: [...profile.skills, value] });
     setSkillInput("");
+  }
+
+  function importCoreDocument() {
+    if (!profile) return;
+    const raw = coreDoc.trim();
+    if (!raw) {
+      setMessage({
+        kind: "alert",
+        text: "Paste your resume / core document text first.",
+      });
+      return;
+    }
+    const { profile: next, filled } = parseResumeToProfile(raw, profile);
+    setProfile(next);
+    setMessage(
+      filled.length > 0
+        ? {
+            kind: "success",
+            text: `Reconfigured from core document — populated ${filled.join(
+              ", ",
+            )}. Review below, then save.`,
+          }
+        : {
+            kind: "alert",
+            text: "Nothing new was found to import (existing fields are left untouched).",
+          },
+    );
   }
 
   function updateExperience(id: string, patch: Partial<ExperienceItem>) {
@@ -104,6 +133,47 @@ export default function ProfilePanel({
           {message.text}
         </div>
       )}
+
+      <div className="panel">
+        <div className="panel-title">
+          <h2>Import Core Document</h2>
+          <span className="muted">drop in your resume</span>
+        </div>
+        <div className="field">
+          <label>Resume / CV text</label>
+          <textarea
+            value={coreDoc}
+            onChange={(e) => setCoreDoc(e.target.value)}
+            placeholder={
+              "Paste your existing resume here. Stealth parses your identity, contact details, summary, skills, experience bullets and education from it, then reconfigures the master profile below.\n\nExisting fields are never overwritten — review and save."
+            }
+            style={{ minHeight: "150px" }}
+          />
+          <span className="muted">
+            Nothing is fabricated — every field is read from the text you paste.
+            Empty fields are filled and new items appended; existing data is
+            preserved for you to review before saving.
+          </span>
+        </div>
+        <div className="row">
+          <button
+            className="btn magenta small"
+            type="button"
+            onClick={importCoreDocument}
+          >
+            Parse &amp; Populate
+          </button>
+          {coreDoc && (
+            <button
+              className="btn ghost small"
+              type="button"
+              onClick={() => setCoreDoc("")}
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
 
       <div className="panel">
         <div className="panel-title">

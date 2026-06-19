@@ -29,7 +29,7 @@ const STOPWORDS = new Set([
  * Curated multi-word technical terms that must be detected as single keywords.
  * Order matters only for readability; matching is case-insensitive.
  */
-const SKILL_PHRASES = [
+export const SKILL_PHRASES = [
   "machine learning","deep learning","natural language processing","computer vision",
   "data science","data engineering","data analysis","big data","data pipeline",
   "software engineering","software development","full stack","front end","back end",
