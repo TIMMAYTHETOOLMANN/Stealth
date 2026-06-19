@@ -54,6 +54,22 @@ const DEGREE_RE =
   /\b(ph\.?d|m\.?b\.?a|m\.?s\.?c?|b\.?s\.?c?|b\.?a|m\.?a|b\.?eng|m\.?eng|bachelor|master|associate|diploma|doctorate)\b/i;
 const SCHOOL_RE = /\b(university|college|institute|school|academy|polytechnic)\b/i;
 
+/** Separators used to split a "Title <sep> Company" role header. */
+const ROLE_SEPARATORS = [" at ", " @ ", " — ", " – ", " | ", " - "];
+/** Matches a role header that embeds a separator (incl. comma). */
+const ROLE_HEADER_SEP_RE = / at | @ | — | – | \| | - |,/;
+
+/** Curated lexicon regexes, pre-compiled once to avoid per-call rebuilds. */
+const LEXICON_MATCHERS: { display: string; re: RegExp }[] = SKILL_PHRASES.map(
+  (phrase) => ({
+    display: phrase.replace(/\b\w/g, (c) => c.toUpperCase()),
+    re: new RegExp(
+      `(?:^|[^a-z0-9+#])${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:[^a-z0-9+#]|$)`,
+      "i",
+    ),
+  }),
+);
+
 function splitLines(raw: string): string[] {
   return raw
     .replace(/\r\n?/g, "\n")
@@ -112,8 +128,7 @@ function extractDates(line: string): {
 
 /** Split a role header into title + company using common separators. */
 function parseRoleHeader(line: string): { title: string; company: string } {
-  const seps = [" at ", " @ ", " — ", " – ", " | ", " - "];
-  for (const sep of seps) {
+  for (const sep of ROLE_SEPARATORS) {
     const idx = line.toLowerCase().indexOf(sep);
     if (idx > 0) {
       return {
@@ -169,7 +184,7 @@ function parseExperience(lines: string[]): ExperienceItem[] {
       current.bullets.length === 0 &&
       !current.company &&
       !hasDates &&
-      !/ at | @ | — | – | \| | - |,/.test(line)
+      !ROLE_HEADER_SEP_RE.test(line)
     ) {
       current.company = line.trim();
       continue;
@@ -232,14 +247,8 @@ function parseSkills(lines: string[]): string[] {
 function lexiconSkills(raw: string): string[] {
   const lower = raw.toLowerCase();
   const found: string[] = [];
-  for (const phrase of SKILL_PHRASES) {
-    const re = new RegExp(
-      `(?:^|[^a-z0-9+#])${phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:[^a-z0-9+#]|$)`,
-      "i",
-    );
-    if (re.test(lower)) {
-      found.push(phrase.replace(/\b\w/g, (c) => c.toUpperCase()));
-    }
+  for (const { display, re } of LEXICON_MATCHERS) {
+    if (re.test(lower)) found.push(display);
   }
   return found;
 }
